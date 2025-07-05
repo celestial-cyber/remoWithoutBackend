@@ -1,68 +1,75 @@
-import React, { useEffect, useRef } from 'react'
+'use client';
+
+import React, { useEffect, useRef } from 'react';
 import '@toast-ui/editor/dist/toastui-editor.css';
 import { Editor } from '@toast-ui/react-editor';
 import { Button } from '@/components/ui/button';
-import { Copy } from 'lucide-react';
-import Link from 'next/link';
-import html2canvas from 'html2canvas';
-import jdpdf, { jsPDF } from 'jspdf';
-import downloadpdf from './FormSection'
-interface props{
-aiOutput:any;
+import { Download } from 'lucide-react';
+
+interface Props {
+  aiOutput: string;
 }
 
-export default function OutputSection({aiOutput}:props) {
-    const editorRef:any=useRef();
-    // const pdfRef:any=useRef(aiOutput); 
-    // const downloadPDF=()=>{
-    //   const input = pdfRef.current;
-    //   html2canvas(input).then((canvas)=>{
-    //     const imgData =canvas.toDataURL('image/png');
-    //     const pdf = new jsPDF('p','mm','a4',true);
-    //     const pdfWidth = pdf.internal.pageSize.getWidth();
-    //     const pdfHeight = pdf.internal.pageSize.getHeight();
-    //     const imgWidth = canvas.width;
-    //     const imgHeight = canvas.height;
-    //     const ratio = Math.min(pdfWidth/imgWidth, pdfHeight/imgHeight);
-    //     const imgX =(pdfWidth-imgWidth*ratio)/2;
-    //     const imgY = 70;
-    //     pdf.addImage(imgData,'PNG',imgX,imgY,imgWidth*ratio, imgHeight*ratio);
-    //     pdf.save('abdc.pdf');
+export default function OutputSection({ aiOutput }: Props) {
+  const editorRef = useRef<Editor>(null);
 
-    //   });
-      
-      
-    // }    
-   
-        useEffect(()=>{
-        const editorInstance=editorRef.current.getInstance();
-        editorInstance.setMarkdown(aiOutput);
-    },[aiOutput])
+  useEffect(() => {
+    const editorInstance = editorRef.current?.getInstance();
+    if (editorInstance && aiOutput) {
+      editorInstance.setMarkdown(aiOutput);
+    }
+  }, [aiOutput]);
 
+  const handleDownloadPDF = async () => {
+    const editorInstance = editorRef.current?.getInstance();
+    if (!editorInstance) return;
+
+    const contentHTML = editorInstance.getHTML();
+
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = contentHTML;
+    tempDiv.style.padding = '20px';
+    tempDiv.style.backgroundColor = 'white';
+    tempDiv.style.fontFamily = 'Arial, sans-serif';
+    document.body.appendChild(tempDiv);
+
+    const html2pdf = (await import('html2pdf.js')).default;
+
+    html2pdf()
+      .from(tempDiv)
+      .set({
+        margin: 0.5,
+        filename: 'AI_Generated_Report.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+      })
+      .save()
+      .finally(() => {
+        document.body.removeChild(tempDiv);
+      });
+  };
 
   return (
-    <div className='bg-white shadow-lg border rounded-lg'>
-        <div className='flex justify-between items-center p-5'>
-            <h2 className='font-bold text-lg'>Your result</h2>
-            {/* <Button className='flex gap-2'><Copy className='w-4 h-4'/> Copy</Button> */}
-        </div>
-        {/* <div className='flex justify-between items-center p-5'>
-        <Link href={pdfRef}>
-             <Button className='flex gap-2'>Download</Button>
-        </Link> */}
-        {/* </div> */}
-       
-       <Editor
-       
+    <div className="bg-white shadow-lg border rounded-lg">
+      <div className="flex justify-between items-center p-5">
+        <h2 className="font-bold text-lg">Your result</h2>
+        <Button
+          onClick={handleDownloadPDF}
+          className="flex gap-2 bg-purple-600 hover:bg-purple-700 text-white"
+        >
+          <Download className="w-4 h-4" />
+          Download PDF
+        </Button>
+      </div>
+
+      <Editor
         ref={editorRef}
-    initialValue="Your result will appear here.."
-    initialEditType="wysiwyg"
-    height="500px"
-    useCommandShortcut={true}
-    onChange={()=>console.log(editorRef.current.getInstance().getMarkdown())}
-   />
-  
- 
+        initialValue="Your result will appear here..."
+        initialEditType="wysiwyg"
+        height="500px"
+        useCommandShortcut={true}
+      />
     </div>
-  )
+  );
 }
