@@ -1,14 +1,17 @@
-# Use Node.js base image
+# Use Node Alpine
 FROM node:18.18.2-alpine
 
 # Set working directory
 WORKDIR /app
 
-# Copy all files
-COPY . .
+# Copy package files first to cache deps
+COPY package*.json ./
 
-# Install dependencies forcefully (to skip peer conflicts)
+# Install dependencies with legacy-peer-deps
 RUN npm install --legacy-peer-deps
+
+# Copy the rest of the app
+COPY . .
 
 # Build the app
 RUN npm run build
@@ -16,5 +19,5 @@ RUN npm run build
 # Expose port
 EXPOSE 3000
 
-# Start the app
+# Start app
 CMD ["npm", "start"]
