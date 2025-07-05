@@ -1,19 +1,19 @@
-# Use official Node image
+# Use Node.js base image
 FROM node:18.18.2-alpine
 
 # Set working directory
 WORKDIR /app
 
-# Copy all project files
+# Copy all files
 COPY . .
 
-# Install dependencies using --legacy-peer-deps to bypass conflicts
+# Install dependencies forcefully (to skip peer conflicts)
 RUN npm install --legacy-peer-deps
 
-# Build your Next.js app
+# Build the app
 RUN npm run build
 
-# Expose port (Next.js default)
+# Expose port
 EXPOSE 3000
 
 # Start the app
